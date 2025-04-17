@@ -102,7 +102,7 @@ def delete_product(product_id):
 @app.route('/products/total-value', methods=['GET'])
 def get_total_inventory_value():
     pipeline = [
-        {"$project": {"total": {"$multiply": ["$price", "$quantity"]}}},  # Calculate total value for each product
+        {"$project": {"total": {"$multiply": ["$price", "$stock"]}}},  # Calculate total value for each product
         {"$group": {"_id": None, "total_inventory_value": {"$sum": "$total"}}}  # Sum all total values
     ]
     result = list(collection.aggregate(pipeline))
@@ -128,17 +128,32 @@ def get_average_price_per_category():
     return jsonify(result)
 
 # Get Top Selling Products (Summing sales)
-@app.route('/products/top-selling', methods=['GET'])
+@app.route('/products/most-expensive-category', methods=['GET'])
 def get_top_selling_products():
     pipeline = [
         {"$group": {
-            "_id": "$name",  # Group by product name
-            "total_sales": {"$sum": "$sales"}  # Sum the sales for each product
+            "_id": "$category",  # Group by category
+            "most_expensive": {"$sum": {"$multiply": ["$price", "$stock"]}}  # Calculate total sales for each category
         }},
-        {"$sort": {"total_sales": -1}}  # Sort by total_sales in descending order
+        {"$sort": {"most_expensive": -1}},  # Sort by total_sales in descending order
+        {"$limit": 1}  # Limit to the most expensive category
     ]
-    products = list(collection.aggregate(pipeline))
-    return jsonify(products)
+    result = list(collection.aggregate(pipeline))
+    return jsonify(result[0] if result else {"message": "No data found"})
+
+# Get Top Selling Products (Summing sales)
+@app.route('/products/value-category', methods=['GET'])
+def get_value_products():
+    pipeline = [
+        {"$group": {
+            "_id": "$category",  # Group by category
+            "Category_Value": {"$sum": {"$multiply": ["$price", "$stock"]}}  # Calculate total sales for each category
+        }},
+        {"$sort": {"Category_Value": -1}}  # Sort by total_sales in descending order
+        
+    ]
+    result = list(collection.aggregate(pipeline))
+    return jsonify(result)
 
 # :::::::::::::::::::::::::::::::::: Helper Functions ::::::::::::::::::::::::::::::::::
 
