@@ -155,6 +155,23 @@ def get_value_products():
     result = list(collection.aggregate(pipeline))
     return jsonify(result)
 
+# Get Top Selling Products (Summing sales)
+@app.route('/products/value-category-less-than', methods=['GET'])
+def get_less_value_products():
+    categ = request.args.get('category', '')
+    
+    ltval = float(request.args.get('ltval', 100))  # Default threshold is 10000
+    # Find products with the specified category and price less than the given threshold
+    pipeline = [
+        {"$match": {"category": categ, "price": {"$lt": ltval}}},  # Match category and price less than threshold
+        {"$sort": {"price": -1}},  # Sort by price in ascending order
+        {"$project": {"_id": 0, "name": 1, "price": 1, "category": 1}}  # Project relevant fields
+    ]
+    # Execute the aggregation pipeline
+    # and convert the result to a list
+    result = list(collection.aggregate(pipeline))
+    return jsonify(result if result else {"message": "No data found"})
+    
 # :::::::::::::::::::::::::::::::::: Helper Functions ::::::::::::::::::::::::::::::::::
 
 # Helper function to serialize ObjectId to string
